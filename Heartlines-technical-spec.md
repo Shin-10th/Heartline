@@ -97,11 +97,12 @@ This is inherently a two-person, high-intimacy data set (voices, photos, daily r
 
 **Phase 3:** widgets/lock-screen presence (distance + local times at a glance), Apple Watch companion, deeper personalization of rituals.
 
-## 9. Open questions for you
-1. Ringtone feature: ship the notification-sound version for MVP, or commit to in-app calling now (§5.3)?
-2. Sign-in method: email/password, or Sign in with Apple/Google only?
-3. Avatar pipeline: worth a short isolated prototype before folding it into the MVP build, or ship placeholder avatars first and layer this in after core features work?
-4. Any target platform priority — iOS first, Android first, or both together?
+## 9. Open questions — decided
+
+1. **Ringtone feature: shipping the notification-sound version for MVP** (§5.3, option (a)) — reframed as "your voice as their notification sound." In-app calling (true ringtone experience) stays a Phase 2 option; nothing about the MVP data model blocks adding it later.
+2. **Sign-in method: email/password for MVP** (`app/pair.tsx`, Firebase Auth). Simplest to ship without extra Apple/Google developer console setup, and Firebase Auth lets you add Sign in with Apple/Google later without restructuring anything.
+3. **Avatar pipeline: shipping placeholder avatars first.** The Home and World screens already use simple colored pixel-block placeholders; the real photo → pixel-sprite pipeline (§5.7) stays a follow-up prototype, off the MVP critical path, per this section's own recommendation.
+4. **Platform priority: both together, by default.** One Expo/React Native codebase already targets iOS and Android identically — there's no separate build to prioritize. App Store vs. Play Store *submission* order can simply follow whichever developer account is ready first when that time comes.
 
 ## 10. Proposed repo structure (for when we scaffold)
 
@@ -117,3 +118,22 @@ Heartline/
   Heartlines-concept.md
   Heartlines-technical-spec.md
 ```
+
+
+## 11. Implementation status
+
+As of the last build pass: all six screens (`app/`) are real and interactive, not just
+mockups. Pure logic — timezone-overlap math (`services/goldenHour.ts`), streak rollover
+(`services/streaks.ts`), and distance/countdown (`lib/geo.ts`) — is implemented and unit
+tested (`__tests__/`), independent of Firebase. `services/firebase.ts` exposes an
+`isFirebaseConfigured` flag: every hook and screen checks it and falls back to sample data
+(`lib/demoData.ts`) when no `.env` is set, so the app is fully browsable before a Firebase
+project exists. `functions/src/index.ts` implements the Golden Hour recompute trigger, the
+nightly streak-rollover cron, and heartbeat/voice-note push fan-out; `firestore.rules` and
+`storage.rules` enforce the §7 privacy baseline (couple-scoped access only). Pairing
+(`app/pair.tsx`) does real Firebase Auth + an invite-code flow once `.env` is filled in.
+Not yet built: the avatar-generation pipeline (needs a hosted image API key — see §9 above),
+push-notification-sound bundling for voice notes (client UI exists; the actual OS-level
+sound-bundling step is still a TODO), and branded app icon/splash assets (currently Expo
+defaults). See `SETUP.md` for the exact steps to go from this state to a live Firebase
+backend.

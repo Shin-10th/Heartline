@@ -1,10 +1,13 @@
-import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Pressable, ScrollView, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { signOut } from "firebase/auth";
 import { useTheme } from "../theme/ThemeContext";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
 import { HeartAccent } from "../components/HeartAccent";
+import { auth, isFirebaseConfigured } from "../services/firebase";
+import { registerForPushNotificationsAsync } from "../services/notifications";
 
 // Settings screen: the working theme picker (light/dark + five accent
 // palettes) from the design canvas, plus a couple of standard rows.
@@ -12,6 +15,24 @@ export default function SettingsScreen() {
   const { colors, themeId, mode, setThemeId, setMode, themeList } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+
+  async function handleNotificationsPress() {
+    const token = await registerForPushNotificationsAsync();
+    Alert.alert(
+      token ? "Notifications enabled" : "Couldn't enable notifications",
+      token
+        ? "This device is registered for heartbeats, streak milestones, and reminders."
+        : "That needs a physical device with permission granted, and (for remote push) a configured EAS project."
+    );
+  }
+
+  function handleSignOut() {
+    if (!isFirebaseConfigured || !auth?.currentUser) {
+      Alert.alert("Not signed in", "Connect Firebase and sign in from Account & pairing first.");
+      return;
+    }
+    signOut(auth);
+  }
 
   return (
     <ScrollView
@@ -110,17 +131,17 @@ export default function SettingsScreen() {
 
       {/* other rows */}
       <View style={[styles.rowsCard, { borderColor: colors.line, backgroundColor: colors.surface }]}>
-        <View style={[styles.row, { borderBottomColor: colors.line }]}>
+        <Pressable style={[styles.row, { borderBottomColor: colors.line }]} onPress={handleNotificationsPress}>
           <Text style={{ fontSize: 13.5, color: colors.text, flex: 1 }}>Notifications</Text>
           <Text style={{ color: colors.textFaint }}>{"\u203a"}</Text>
-        </View>
-        <View style={[styles.row, { borderBottomColor: colors.line }]}>
+        </Pressable>
+        <Pressable style={[styles.row, { borderBottomColor: colors.line }]} onPress={() => router.push("/pair")}>
           <Text style={{ fontSize: 13.5, color: colors.text, flex: 1 }}>Account & pairing</Text>
           <Text style={{ color: colors.textFaint }}>{"\u203a"}</Text>
-        </View>
-        <View style={[styles.row, { borderBottomWidth: 0 }]}>
+        </Pressable>
+        <Pressable style={[styles.row, { borderBottomWidth: 0 }]} onPress={handleSignOut}>
           <Text style={{ fontSize: 13.5, color: colors.textFaint }}>Sign out</Text>
-        </View>
+        </Pressable>
       </View>
     </ScrollView>
   );

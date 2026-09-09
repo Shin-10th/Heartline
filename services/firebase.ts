@@ -1,11 +1,13 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { getAuth, Auth } from "firebase/auth";
+import { getFirestore, Firestore } from "firebase/firestore";
+import { getStorage, FirebaseStorage } from "firebase/storage";
 
-// Install first: npx expo install firebase
-// Fill in .env (see .env.example) with your Firebase project config.
-// Uses EXPO_PUBLIC_ prefixed vars so they're available on the client bundle.
+// Copy .env.example to .env and fill in your Firebase project's web config
+// (Firebase console -> Project settings -> General -> Your apps) to go live.
+// Until then, `isFirebaseConfigured` is false and every hook in hooks/ falls
+// back to sample data (lib/demoData.ts) instead of crashing -- that's what
+// lets the whole app be browsable before the backend exists.
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -15,7 +17,27 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
-export const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
-export const auth = getAuth(firebaseApp);
-export const db = getFirestore(firebaseApp);
-export const storage = getStorage(firebaseApp);
+export const isFirebaseConfigured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
+
+let app: FirebaseApp | null = null;
+let authInstance: Auth | null = null;
+let dbInstance: Firestore | null = null;
+let storageInstance: FirebaseStorage | null = null;
+
+if (isFirebaseConfigured) {
+  try {
+    app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    authInstance = getAuth(app);
+    dbInstance = getFirestore(app);
+    storageInstance = getStorage(app);
+  } catch (err) {
+    // Config present but invalid (typo'd key, project deleted, etc.) -- warn
+    // once and keep the app usable in demo mode rather than crashing on boot.
+    console.warn("[firebase] failed to initialize, falling back to demo mode:", err);
+  }
+}
+
+export const firebaseApp = app;
+export const auth = authInstance;
+export const db = dbInstance;
+export const storage = storageInstance;

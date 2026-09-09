@@ -22,6 +22,7 @@ function ThemedStack() {
       <Stack.Screen name="voice" options={{ title: "Voice Notes" }} />
       <Stack.Screen name="rituals" options={{ title: "Rituals" }} />
       <Stack.Screen name="world" options={{ title: "World" }} />
+      <Stack.Screen name="pair" options={{ title: "Account & Pairing" }} />
     </Stack>
   );
 }
